@@ -1,0 +1,25 @@
+{
+  "short_name": "MYLE",
+  "name": "Make Your List Ease",
+  "icons": [
+    {
+      "src": "https://images.glints.com/unsafe/glints-dashboard.s3.amazonaws.com/company-logo/69d10eaa19dffcd1db7b51c2c6d8c039.png",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "https://images.glints.com/unsafe/glints-dashboard.s3.amazonaws.com/company-logo/69d10eaa19dffcd1db7b51c2c6d8c039.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://images.glints.com/unsafe/glints-dashboard.s3.amazonaws.com/company-logo/69d10eaa19dffcd1db7b51c2c6d8c039.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
