@@ -2,7 +2,7 @@ import React, { Fragment, useEffect, useRef, useState } from 'react'
 import Navbar from '../../../../../components/Navbar/Navbar'
 import Bottom from '../../../../../components/BottomBar/Bottom'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { collection, deleteDoc, getDocs, query, updateDoc, where } from 'firebase/firestore'
+import { collection, deleteDoc, getDocs, query, updateDoc, addDoc, where } from 'firebase/firestore'
 import { auth, db } from '../../../../../config/firebase/firebase'
 import { Combobox, Dialog, Listbox, Transition } from '@headlessui/react'
 import { UserIcon } from '@heroicons/react/24/solid'
@@ -30,6 +30,10 @@ const DetailProjek = () => {
     const [ fetchedUsers, setFetchedUsers ] = useState([]);
     const [ noDaftar, setStatusDaftar ] = useState(false);
 
+    
+    // Get List User (Tidak Terdaftar)
+    const [ fetchedUsersUn, setFetchedUsersUn ] = useState([]);
+
     const [ errorMessagePIC, setErrorMessagePIC] = useState('');
 
     const [ imageLoaded, setImageLoaded ] = useState(false);
@@ -40,6 +44,8 @@ const DetailProjek = () => {
     // Get Role 
     const [ role, setRole ] = useState('');    
     const [ email, setEmail ] = useState('');
+
+    
 
     try {
         useEffect(() => {
@@ -85,6 +91,53 @@ const DetailProjek = () => {
         
             // No cleanup needed in this case, so the return can be omitted or left empty.
             }, [projectData.idProject]);
+    } catch (error) {
+        console.log(error)
+    }
+
+    try {
+        useEffect(() => {
+            const fetchData = async () => {
+                const usersListCollection = collection(db, "usersProjects");
+            
+                try {
+                    const userListQuery = query(usersListCollection, where("idProject", "==", projectData.idProject));
+                    const querySnapshot = await getDocs(userListQuery);
+            
+                    if (querySnapshot.docs.length > 0) {
+                        const fetchedListUser = querySnapshot.docs.map(doc => ({
+                            idUser: doc.data().idUser,
+                        }));
+            
+                        // Fetch all users
+                        const usersCollection = collection(db, "users");
+                        const allUsersSnapshot = await getDocs(usersCollection);
+            
+                        if (allUsersSnapshot.docs.length > 0) {
+                            const allUsers = allUsersSnapshot.docs.map(doc => doc.data());
+            
+                            // Filter out users whose idUser is present in fetchedListUser
+                            const fetchedListUserIds = fetchedListUser.map(user => user.idUser);
+                            const filteredUsers = allUsers.filter(user => !fetchedListUserIds.includes(user.idUser));
+            
+                            setFetchedUsersUn(filteredUsers);
+                        } else {
+                            console.log("No users found in the users collection.");
+                        }
+                    } else {
+                        console.log("No documents found for the given query.");
+                    }
+                } catch (error) {
+                    console.error("Error fetching data: ", error);
+                }
+            };
+            
+            // Invoke the fetch function
+            fetchData();
+            
+            // No cleanup needed in this case, so the return can be omitted or left empty.
+            }, [projectData.idProject]);
+            
     } catch (error) {
         console.log(error)
     }
@@ -416,6 +469,10 @@ const DetailProjek = () => {
     // Modal Yakin
     const [ openHapus, setOpenHapus ] = useState(false);
     const [ deleteIdUser, setDeleteIdUser ] = useState('');
+    
+    // Modal Yakin
+    const [ openTambahkan, setOpenTambahkan ] = useState(false);
+    const [ TambahkanUser, setTambahkanIdUser ] = useState('');
 
     const handleYakin = async () => {
 
@@ -451,6 +508,42 @@ const DetailProjek = () => {
               } else {
                 console.log("ada 2 result yang akan di hapus");
               }
+
+        } catch (error) {
+            console.error("Error getting documents: ", error);
+        }
+
+    }
+    const handleTambah = async () => {
+
+        try {
+            try {
+                const usersProjects = collection(db, "usersProjects");
+    
+                    const idup = `${uuidv4()}`
+                    try {
+                      const docRef = await addDoc(usersProjects, {
+                        idUserProject: `users-${idup}-projects`,
+                        idUser: `${TambahkanUser}`,
+                        idProject: `${projectData.idProject}`
+                      });
+                        setCount(3);
+                        setOpenTambahkan(false);
+        
+                        setCount(3);
+                        setOpen(true);
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 3500);
+    
+                      console.log("Document written with ID: ", docRef.id);
+                    } catch (e) {
+                      console.error("Error adding document: ", e);
+                    }
+                    
+            } catch (error) {
+                console.log("Error semua maszzeh: " + error)
+            }
 
         } catch (error) {
             console.error("Error getting documents: ", error);
@@ -518,6 +611,73 @@ const DetailProjek = () => {
                             type="button"
                             className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
                             onClick={() => setOpenHapus(false)}
+                            ref={cancelButtonRef}
+                        >
+                            Batalkan
+                        </button>
+                        </div>
+                    </Dialog.Panel>
+                    </Transition.Child>
+                </div>
+                </div>
+            </Dialog>
+            </Transition.Root>
+
+        <Transition.Root show={openTambahkan} as={Fragment}>
+            <Dialog as="div" className="relative z-10" initialFocus={cancelButtonRef} onClose={setOpenTambahkan}>
+                <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0"
+                enterTo="opacity-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100"
+                leaveTo="opacity-0"
+                >
+                <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+                </Transition.Child>
+
+                <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
+                <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                    <Transition.Child
+                    as={Fragment}
+                    enter="ease-out duration-300"
+                    enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    enterTo="opacity-100 translate-y-0 sm:scale-100"
+                    leave="ease-in duration-200"
+                    leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+                    leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    >
+                    <Dialog.Panel className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                        <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div className="sm:flex sm:items-start">
+                            <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-yellow-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <ExclamationCircleIcon className="h-6 w-6 text-yellow-600" aria-hidden="true" />
+                            </div>
+                            <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+                            <Dialog.Title as="h3" className="text-base font-semibold leading-6 text-gray-900">
+                                Yakin untuk menambah pengguna?
+                            </Dialog.Title>
+                            <div className="mt-2">
+                                <p className="text-sm text-gray-500">
+                                 Apakah kamu yakin menambah pengguna ini? Proses ini tidak bisa dibatalkan.
+                                </p>
+                            </div>
+                            </div>
+                        </div>
+                        </div>
+                        <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button
+                            type="button"
+                            className="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:ml-3 sm:w-auto"
+                            onClick={handleTambah}
+                        >
+                            Yakin
+                        </button>
+                        <button
+                            type="button"
+                            className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                            onClick={() => setOpenTambahkan(false)}
                             ref={cancelButtonRef}
                         >
                             Batalkan
@@ -904,7 +1064,7 @@ const DetailProjek = () => {
                             }
 
                             <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                                <dt className="text-sm font-medium leading-6 text-gray-900">Daftar Mahasiswa</dt>
+                                <dt className="text-sm font-medium leading-6 text-gray-900">Daftar Karyawan</dt>
                                 <dd className="mt-2 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
                                 <ul className="divide-y divide-gray-100 rounded-md border border-gray-200">
                                     {fetchedUsers ? (
@@ -944,7 +1104,7 @@ const DetailProjek = () => {
                                             <div className="flex w-0 flex-1 items-center">
                                                 <UserIcon className="h-5 w-5 flex-shrink-0 text-gray-400" aria-hidden="true" />
                                                 <div className="ml-4 flex min-w-0 flex-1 gap-2">
-                                                <span className="truncate font-medium animate-pulse">Loading Daftar Mahasiswa</span>
+                                                <span className="truncate font-medium animate-pulse">Loading Daftar Karyawan</span>
                                                 {/* <span className="flex-shrink-0 text-gray-400">4.5mb</span> */}
                                                 </div>
                                             </div>
@@ -957,7 +1117,7 @@ const DetailProjek = () => {
                                             <div className="flex w-0 flex-1 items-center">
                                                 <UserIcon className="h-5 w-5 flex-shrink-0 text-gray-400" aria-hidden="true" />
                                                 <div className="ml-4 flex min-w-0 flex-1 gap-2">
-                                                <span className="truncate font-medium">Belum ada mahasiswa terdaftar</span>
+                                                <span className="truncate font-medium">Belum ada karyawan terdaftar</span>
                                                 {/* <span className="flex-shrink-0 text-gray-400">4.5mb</span> */}
                                                 </div>
                                             </div>
@@ -981,7 +1141,59 @@ const DetailProjek = () => {
                             <p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">Proyek tidak ditemukan</p>
                         </div>
                     }
-                    
+
+                {/* Tambah Pengguna Terdaftar */}
+                <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt className="text-sm font-medium leading-6 text-gray-900">Tambah Pengguna Terdaftar</dt>
+                    <dd className="mt-2 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+                    <ul className="divide-y divide-gray-100 rounded-md border border-gray-200">
+                        {fetchedUsersUn ? (
+                            <>
+                                {fetchedUsersUn.map((user) => 
+                                <div>
+                                    <li key={user.id} className={`${user.emailUser === email ? "bg-indigo-100 hover:bg-indigo-50" : "hover:bg-gray-100"}
+                                    flex items-center justify-between py-4 pl-4 pr-5 text-sm leading-6`}>
+                                        <div className="flex w-0 flex-1 items-center">
+                                        <img src={user.imageUser} alt="" className="h-10 w-10 rounded-full bg-gray-50" />
+                                            <div className="ml-4 flex min-w-0 flex-1 gap-2">
+                                            <span className="truncate font-medium inline-flex">{user.usernameUser}
+                                                {user.roleUser === "admin" && (
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 mt-0.5 ml-1 text-blue-600">
+                                                    <path fillRule="evenodd" d="M8.603 3.799A4.49 4.49 0 0 1 12 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 0 1 3.498 1.307 4.491 4.491 0 0 1 1.307 3.497A4.49 4.49 0 0 1 21.75 12a4.49 4.49 0 0 1-1.549 3.397 4.491 4.491 0 0 1-1.307 3.497 4.491 4.491 0 0 1-3.497 1.307A4.49 4.49 0 0 1 12 21.75a4.49 4.49 0 0 1-3.397-1.549 4.49 4.49 0 0 1-3.498-1.306 4.491 4.491 0 0 1-1.307-3.498A4.49 4.49 0 0 1 2.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 0 1 1.307-3.497 4.49 4.49 0 0 1 3.497-1.307Zm7.007 6.387a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd" />
+                                                    </svg>
+                                                )}
+                                                {/* <span className="flex-shrink-0 text-gray-400">2.4mb</span> */}
+                                            </span>
+                                            </div>
+                                        </div>
+                                        <div className="ml-4 flex-shrink-0">
+                                            <button onClick={() => {
+                                                setTambahkanIdUser(user.idUser)
+                                                setOpenTambahkan(true)
+                                            }
+                                            } className="font-medium text-blue-500 hover:text-blue-400">
+                                                Tambahkan
+                                            </button>
+                                        </div>
+                                        </li>
+                                </div>
+                                )}
+                            </>
+                        ) : (
+                            <li className="flex items-center justify-between py-4 pl-4 pr-5 text-sm leading-6">
+                                <div className="flex w-0 flex-1 items-center">
+                                    <UserIcon className="h-5 w-5 flex-shrink-0 text-gray-400" aria-hidden="true" />
+                                    <div className="ml-4 flex min-w-0 flex-1 gap-2">
+                                    <span className="truncate font-medium animate-pulse">Loading Daftar Karyawan</span>
+                                    {/* <span className="flex-shrink-0 text-gray-400">4.5mb</span> */}
+                                    </div>
+                                </div>
+                            </li>
+                        )}                        
+                    </ul>
+                    </dd>
+                </div>
+                    {/* END Tambah Pengguna Terdaftar */}
                 </div>
             </main>
             {/* End - Content */}
