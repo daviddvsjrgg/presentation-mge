@@ -1151,7 +1151,7 @@ const DetailProjek = () => {
                             <>
                                 {fetchedUsersUn.map((user) => 
                                 <div>
-                                    <li key={user.id} className={`${user.emailUser === email ? "bg-indigo-100 hover:bg-indigo-50" : "hover:bg-gray-100"}
+                                    <li key={user.id} className={`${user.emailUser === email ? "hidden" : "hover:bg-gray-100"}
                                     flex items-center justify-between py-4 pl-4 pr-5 text-sm leading-6`}>
                                         <div className="flex w-0 flex-1 items-center">
                                         <img src={user.imageUser} alt="" className="h-10 w-10 rounded-full bg-gray-50" />
